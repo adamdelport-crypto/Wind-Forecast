@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f78b4">
+<title>Seychelles Windsurf & Wing Foil Forecast</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" crossorigin="anonymous"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", sans-serif; margin: 0; padding: 14px 12px 28px; background: #f4f6f8; color: #1a1a1a; max-width: 760px; margin-inline: auto; }
+  .header { padding: 14px 14px; background: linear-gradient(135deg,#1f78b4 0%,#2980b9 100%); color: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(31,120,180,0.18); }
+  .header h1 { font-size: 18px; margin: 0 0 2px 0; line-height: 1.25; }
+  .header .sub { font-size: 12px; opacity: 0.92; }
+  .source-note { font-size: 11px; padding: 8px 10px; border-radius: 8px; background: #eaf4ff; border-left: 3px solid #2980b9; margin-bottom: 12px; line-height: 1.45; color: #1a4565; }
+  .source-note a { color: #1a4565; font-weight: 600; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: #555; margin: 18px 0 8px 0; padding-left: 4px; }
+  .alerts { margin-bottom: 12px; padding: 11px 13px; border-radius: 10px; background: #f1f1f1; border-left: 4px solid #999; font-size: 13px; color: #555; line-height: 1.45; }
+  .alerts.go { background: #e8faf0; border-left-color: #2ecc71; color: #155f33; }
+  .alerts.maybe { background: #fdf6dd; border-left-color: #f1c40f; color: #6a5a00; }
+  .chart-wrap { background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 8px; margin-bottom: 6px; height: 240px; }
+  .moon-strip { display: flex; gap: 0; margin-bottom: 4px; padding: 4px 6px; background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; font-size: 10px; color: #555; align-items: center; overflow: hidden; }
+  .moon-cell { flex: 1; text-align: center; min-width: 0; padding: 1px 0; }
+  .moon-cell .icon { font-size: 15px; display: block; line-height: 1.1; }
+  .moon-cell .label { font-size: 8px; color: #999; }
+  .chart-legend-note { font-size: 10.5px; color: #666; margin-bottom: 14px; padding: 0 4px; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 560px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .card { border: 1px solid #e2e2e2; border-radius: 12px; padding: 12px 14px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card.go { border-color: #2ecc71; background: #f0fcf5; }
+  .card.maybe { border-color: #f1c40f; background: #fffaea; }
+  .card.no { opacity: 0.78; }
+  .day { font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 700; white-space: nowrap; letter-spacing: 0.3px; }
+  .badge.go { background: #2ecc71; color: white; }
+  .badge.maybe { background: #f1c40f; color: #333; }
+  .badge.no { background: #d5d5d5; color: #555; }
+  .row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+  .row .k { color: #777; }
+  .row .v { font-variant-numeric: tabular-nums; color: #222; }
+  .row.best { background: #fff8e1; margin: 4px -6px 6px; padding: 6px 8px; border-radius: 6px; border-left: 3px solid #f5a623; font-size: 13px; }
+  .row.best .v { font-weight: 700; color: #6a5500; }
+  .legend { font-size: 11px; color: #777; margin-top: 18px; line-height: 1.55; padding: 0 4px; }
+  .updated { font-size: 11px; color: #888; margin-top: 6px; padding: 0 4px; }
+  .footer-link { display: block; text-align: center; margin-top: 14px; padding: 10px; background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; color: #1f78b4; text-decoration: none; font-size: 13px; font-weight: 600; }
+  .footer-link:active { background: #eef5fa; }
+  .err { padding: 12px; border-radius: 10px; background: #fdecea; border-left: 4px solid #e74c3c; font-size: 13px; color: #6b1f1a; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏄 Windsurf &amp; Wing Foil Forecast</h1>
+  <div class="sub">Victoria, Mahé · Seychelles · 16-day outlook</div>
+</div>
+
+<div class="source-note">
+  <strong>Source:</strong> Windguru WG model (composite of all global models) for spot 16146. Refreshed daily at 06:00 Mahé time.
+  <a href="https://www.windguru.cz/16146" target="_blank" rel="noopener">View on Windguru →</a>
+</div>
+
+<div id="alerts" class="alerts">Loading…</div>
+
+<h2>Wind speed forecast</h2>
+<div class="moon-strip" id="moon-strip"></div>
+<div class="chart-wrap"><canvas id="chart"></canvas></div>
+<div class="chart-legend-note">Blue line: wind. Light blue area: gusts. <span style="color:#e74c3c">Red dashed</span>: 12kt windsurf. <span style="color:#f39c12">Orange dotted</span>: 10kt wing/windfoil. Moon strip shows daily phase (full/new = spring tides).</div>
+
+<h2>Daily session rating</h2>
+<div id="grid" class="grid"></div>
+<div class="updated" id="updated"></div>
+<div class="legend">
+  Wind/gust in knots. Direction shown as compass (e.g. SE = 135°). <strong>WINDSURF</strong> = peak ≥12kt with E/SE/S direction. <strong>WING / WINDFOIL</strong> = ≥10kt with preferred direction (same wind range). <strong>WRONG DIR</strong> = strong enough but off-direction. Daytime hours 08:00–18:00 Mahé.
+</div>
+<a class="footer-link" href="https://www.windguru.cz/16146" target="_blank" rel="noopener">Open Windguru spot 16146</a>
+
+<script>
+// Scraped from windguru.cz/16146 (WG model) on 2026-05-01.
+const FETCHED_AT = "2026-05-01T06:18:00+04:00";
+const WG_DATA = {
+  dates: ["Th 30. 12h","Th 30. 14h","Th 30. 16h","Th 30. 18h","Th 30. 20h","Th 30. 22h","Fr 1. 04h","Fr 1. 06h","Fr 1. 08h","Fr 1. 10h","Fr 1. 12h","Fr 1. 14h","Fr 1. 16h","Fr 1. 18h","Fr 1. 20h","Fr 1. 22h","Sa 2. 04h","Sa 2. 06h","Sa 2. 08h","Sa 2. 10h","Sa 2. 12h","Sa 2. 14h","Sa 2. 16h","Sa 2. 18h","Sa 2. 20h","Sa 2. 22h","Su 3. 04h","Su 3. 06h","Su 3. 08h","Su 3. 10h","Su 3. 12h","Su 3. 14h","Su 3. 16h","Su 3. 18h","Su 3. 20h","Su 3. 22h","Mo 4. 04h","Mo 4. 06h","Mo 4. 09h","Mo 4. 12h","Mo 4. 15h","Mo 4. 18h","Mo 4. 21h","Tu 5. 06h","Tu 5. 09h","Tu 5. 12h","Tu 5. 15h","Tu 5. 18h","Tu 5. 21h","We 6. 06h","We 6. 09h","We 6. 12h","We 6. 15h","We 6. 18h","We 6. 21h","Th 7. 06h","Th 7. 09h","Th 7. 12h","Th 7. 15h","Th 7. 18h","Th 7. 21h","Fr 8. 06h","Fr 8. 09h","Fr 8. 12h","Fr 8. 15h","Fr 8. 18h","Fr 8. 21h","Sa 9. 06h","Sa 9. 09h","Sa 9. 12h","Sa 9. 15h","Sa 9. 18h","Sa 9. 21h","Su 10. 06h","Su 10. 09h","Su 10. 12h","Su 10. 15h","Su 10. 18h","Su 10. 21h","Mo 11. 06h","Mo 11. 09h","Mo 11. 12h","Mo 11. 15h","Mo 11. 18h","Mo 11. 21h","Tu 12. 06h","Tu 12. 09h","Tu 12. 12h","Tu 12. 15h","Tu 12. 18h","Tu 12. 21h","We 13. 06h","We 13. 09h","We 13. 12h","We 13. 15h","We 13. 18h","We 13. 21h","Th 14. 06h","Th 14. 09h","Th 14. 12h","Th 14. 15h","Th 14. 18h","Th 14. 21h","Fr 15. 06h","Fr 15. 09h","Fr 15. 12h","Fr 15. 15h","Fr 15. 18h","Fr 15. 21h","Sa 16. 06h","Sa 16. 09h","Sa 16. 12h"],
+  windspd: [8,7,7,7,6,6,6,6,6,6,7,6,4,6,4,3,4,4,3,3,3,2,2,3,5,5,4,2,3,3,4,4,4,5,4,3,2,2,3,3,5,4,5,5,4,6,7,6,6,6,6,5,6,6,7,7,6,6,6,6,8,8,7,7,8,8,7,8,6,6,6,5,4,6,6,7,7,7,7,7,6,4,8,10,11,10,8,6,9,11,11,12,12,11,11,11,12,13,12,12,12,13,12,12,11,11,9,10,7,8,7,7],
+  gust: [9,9,9,9,8,8,7,8,8,8,9,8,5,7,6,5,5,5,5,4,4,3,3,4,6,7,6,4,5,5,6,6,6,6,5,5,4,4,5,6,7,7,8,7,7,8,9,8,8,8,8,8,8,9,9,9,8,8,8,8,10,10,9,9,10,11,9,10,9,8,7,7,6,8,8,9,9,9,10,9,8,6,10,12,13,13,11,9,12,14,14,15,14,14,14,14,14,15,15,14,15,15,14,15,14,13,9,9,7,8,7,7],
+  dirDeg: [139,132,128,122,120,124,131,134,132,143,140,137,159,121,131,139,138,135,147,156,171,198,174,173,192,198,242,231,209,207,216,213,200,205,211,224,197,128,258,252,202,248,220,169,188,170,167,170,182,189,189,219,216,208,207,185,184,207,207,204,205,147,138,146,138,127,129,140,130,121,123,125,119,188,177,167,175,157,159,129,131,131,149,159,169,139,139,145,158,162,163,149,150,145,146,147,152,150,156,165,162,155,152,153,157,158,161,163,157,171,167,183]
+};
+const WINDSURF_KT = 12, WINGFOIL_KT = 10, YEAR = 2026, MONTH = 4;
+
+function dirToCompass(deg) {
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+function isPreferred(deg) { return deg >= 80 && deg <= 190; }
+
+function bestWindow(dayPoints) {
+  let best = { mean: -1, startH: null, endH: null, n: 0, dirMean: null };
+  for (let h = 8; h <= 14; h++) {
+    const inW = dayPoints.filter(p => p.hour >= h && p.hour <= h + 4);
+    if (inW.length === 0) continue;
+    const mean = inW.reduce((a,b) => a + b.ws, 0) / inW.length;
+    if (mean > best.mean) {
+      let sx = 0, sy = 0;
+      for (const p of inW) { const r = p.dir * Math.PI / 180; sx += Math.cos(r); sy += Math.sin(r); }
+      const dirMean = (Math.atan2(sy/inW.length, sx/inW.length) * 180/Math.PI + 360) % 360;
+      best = { mean, startH: h, endH: h + 4, n: inW.length, dirMean };
+    }
+  }
+  return best;
+}
+
+function moonPhase(date) {
+  const REF = Date.UTC(2000, 0, 6, 18, 14, 0), SYNODIC = 29.530588;
+  const days = (date.getTime() - REF) / 86400000;
+  let age = days % SYNODIC; if (age < 0) age += SYNODIC;
+  const frac = age / SYNODIC;
+  const phases = [
+    { name: "New", icon: "🌑" }, { name: "Waxing crescent", icon: "🌒" },
+    { name: "First quarter", icon: "🌓" }, { name: "Waxing gibbous", icon: "🌔" },
+    { name: "Full", icon: "🌕" }, { name: "Waning gibbous", icon: "🌖" },
+    { name: "Last quarter", icon: "🌗" }, { name: "Waning crescent", icon: "🌘" },
+  ];
+  return { age, frac, ...phases[Math.round(frac * 8) % 8] };
+}
+
+function parseLabel(label) {
+  const m = label.match(/(\w{2})\s+(\d+)\.\s+(\d+)h/);
+  return m ? { dom: parseInt(m[2], 10), hour: parseInt(m[3], 10) } : null;
+}
+function buildDate(dom, hour) {
+  const month = dom >= 30 ? MONTH - 1 : MONTH;
+  return new Date(YEAR, month, dom, hour, 0, 0);
+}
+function fmtDay(d) { return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }); }
+
+function render() {
+  const grid = document.getElementById("grid");
+  const alertsEl = document.getElementById("alerts");
+
+  const points = WG_DATA.dates.map((label, i) => {
+    const p = parseLabel(label); if (!p) return null;
+    return { date: buildDate(p.dom, p.hour), dom: p.dom, hour: p.hour, ws: WG_DATA.windspd[i], g: WG_DATA.gust[i], dir: WG_DATA.dirDeg[i] };
+  }).filter(x => x);
+
+  const moonStrip = document.getElementById("moon-strip");
+  const uniqueDates = [], seenDates = new Set();
+  points.forEach(p => {
+    const iso = p.date.toISOString().slice(0,10);
+    if (!seenDates.has(iso)) { seenDates.add(iso); uniqueDates.push(p.date); }
+  });
+  moonStrip.innerHTML = uniqueDates.map(d => {
+    const m = moonPhase(d);
+    const dayLabel = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+    return `<div class="moon-cell" title="${dayLabel} — ${m.name}"><span class="icon">${m.icon}</span><span class="label">${d.getDate()}</span></div>`;
+  }).join("");
+
+  const labels = points.map(p => p.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }) + " " + String(p.hour).padStart(2,"0") + "h");
+
+  if (typeof Chart !== "undefined") {
+    const ctx = document.getElementById("chart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Gust", data: points.map(p=>p.g), borderColor: "#aed6f1", backgroundColor: "rgba(174,214,241,0.4)", tension: 0.25, pointRadius: 0, borderWidth: 1.2, fill: true },
+          { label: "Wind", data: points.map(p=>p.ws), borderColor: "#1f78b4", backgroundColor: "transparent", tension: 0.25, pointRadius: 0, borderWidth: 2.2 },
+          { label: "Windsurf 12kt", data: labels.map(()=>12), borderColor: "#e74c3c", borderDash: [4,4], pointRadius: 0, borderWidth: 1.2, fill: false },
+          { label: "Wing/Windfoil 10kt", data: labels.map(()=>10), borderColor: "#f39c12", borderDash: [2,3], pointRadius: 0, borderWidth: 1.2, fill: false },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { ticks: { maxTicksLimit: 8, autoSkip: true, font: { size: 9 } }, grid: { display: false } },
+          y: { title: { display: true, text: "kt", font: { size: 11 } }, beginAtZero: true, ticks: { font: { size: 10 } } }
+        },
+        plugins: {
+          legend: { position: "top", labels: { font: { size: 10 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(1) + " kt"}` } }
+        }
+      }
+    });
+  } else {
+    document.querySelector(".chart-wrap").innerHTML = '<div class="err">Chart library failed to load — check your internet connection and reload.</div>';
+  }
+
+  const todayIso = new Date().toISOString().slice(0,10);
+  const byDay = {};
+  points.forEach(p => {
+    const iso = p.date.toISOString().slice(0,10);
+    if (iso < todayIso) return;
+    if (p.hour < 8 || p.hour > 18) return;
+    if (!byDay[iso]) byDay[iso] = { date: p.date, points: [] };
+    byDay[iso].points.push(p);
+  });
+
+  const days = Object.keys(byDay).sort();
+  const cards = [], goDays = [], maybeDays = [];
+
+  for (const iso of days) {
+    const dd = byDay[iso];
+    const speeds = dd.points.map(p => p.ws);
+    const gusts = dd.points.map(p => p.g);
+    const dirs = dd.points.map(p => p.dir);
+    const avg = speeds.reduce((a,b)=>a+b,0) / speeds.length;
+    const peak = Math.max(...speeds);
+    const peakIdx = speeds.indexOf(peak);
+    const peakGust = Math.max(...gusts);
+    let sx=0, sy=0;
+    for (const dv of dirs) { const r = dv*Math.PI/180; sx += Math.cos(r); sy += Math.sin(r); }
+    const meanDir = (Math.atan2(sy/dirs.length, sx/dirs.length) * 180/Math.PI + 360) % 360;
+    const peakDir = dirs[peakIdx];
+
+    let cls = "no", badge = "below threshold";
+    const hitsWindsurf = peak >= WINDSURF_KT;
+    const hitsWing = peak >= WINGFOIL_KT;
+    const dirOK = isPreferred(peakDir);
+
+    if (hitsWindsurf && dirOK) { cls = "go"; badge = "WINDSURF"; goDays.push(iso); }
+    else if (hitsWindsurf) { cls = "maybe"; badge = "12kt — wrong dir"; maybeDays.push(iso); }
+    else if (hitsWing && dirOK) { cls = "maybe"; badge = "WING / WINDFOIL"; maybeDays.push(iso); }
+    else if (hitsWing) { cls = "maybe"; badge = "10kt — wrong dir"; }
+
+    const moon = moonPhase(dd.date);
+    const bw = bestWindow(dd.points);
+    const bwText = bw.startH != null
+      ? `${String(bw.startH).padStart(2,"0")}:00–${String(bw.endH).padStart(2,"0")}:00 · ${bw.mean.toFixed(1)} kt ${dirToCompass(bw.dirMean)}`
+      : "n/a";
+
+    cards.push(`
+      <div class="card ${cls}">
+        <div class="day"><span>${fmtDay(dd.date)}</span> <span class="badge ${cls}">${badge}</span></div>
+        <div class="row best"><span class="k">⭐ Best 4hr window</span><span class="v">${bwText}</span></div>
+        <div class="row"><span class="k">Avg wind (08–18)</span><span class="v">${avg.toFixed(1)} kt</span></div>
+        <div class="row"><span class="k">Peak wind</span><span class="v">${peak.toFixed(1)} kt</span></div>
+        <div class="row"><span class="k">Peak gust</span><span class="v">${peakGust.toFixed(1)} kt</span></div>
+        <div class="row"><span class="k">Avg dir</span><span class="v">${dirToCompass(meanDir)} (${Math.round(meanDir)}°)</span></div>
+        <div class="row"><span class="k">Moon</span><span class="v">${moon.icon} ${moon.name}</span></div>
+      </div>
+    `);
+  }
+
+  grid.innerHTML = cards.join("");
+
+  if (goDays.length) {
+    alertsEl.className = "alerts go";
+    alertsEl.innerHTML = `<strong>🟢 Sessions on:</strong> ${goDays.map(d => fmtDay(new Date(d))).join(", ")} — ≥12kt with E/SE/S during daylight.`;
+  } else if (maybeDays.length) {
+    alertsEl.className = "alerts maybe";
+    alertsEl.innerHTML = `<strong>🟡 Marginal:</strong> ${maybeDays.map(d => fmtDay(new Date(d))).join(", ")} — wing-foilable or strong-but-off-direction.`;
+  } else {
+    alertsEl.className = "alerts";
+    alertsEl.innerHTML = `<strong>⚪ No sessions:</strong> nothing in the forecast window hits the threshold during daylight.`;
+  }
+
+  const fetched = new Date(FETCHED_AT);
+  document.getElementById("updated").textContent = `Forecast snapshot: ${fetched.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · Source: Windguru WG · spot 16146`;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", render);
+} else {
+  render();
+}
+</script>
+</body>
+</html>
