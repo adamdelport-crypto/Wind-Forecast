@@ -255,4 +255,14 @@ function render() {
   }
 
   const fetched = new Date(FETCHED_AT);
-  document.getElementById("updated").textContent = `Forecast snapshot: ${fetched.toLocaleStr
+  document.getElementById("updated").textContent = `Forecast snapshot: ${fetched.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · Source: Windguru WG · spot 16146`;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", render);
+} else {
+  render();
+}
+</script>
+</body>
+</html>
