@@ -24,6 +24,14 @@
   .moon-cell { flex: 1; text-align: center; min-width: 0; padding: 1px 0; }
   .moon-cell .icon { font-size: 15px; display: block; line-height: 1.1; }
   .moon-cell .label { font-size: 8px; color: #999; }
+  .dir-strip-wrap { background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 6px 8px 4px; margin-bottom: 6px; }
+  .dir-strip-title { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .dir-strip { display: flex; gap: 0; align-items: center; height: 22px; overflow: hidden; }
+  .dir-cell { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; height: 100%; }
+  .dir-cell svg { display: block; }
+  .dir-cell.pref svg path { fill: #27ae60; }
+  .dir-cell.off svg path { fill: #b8b8b8; }
+  .dir-day-marker { width: 0; border-left: 1px dashed #e0e0e0; height: 16px; }
   .chart-legend-note { font-size: 10.5px; color: #666; margin-bottom: 14px; padding: 0 4px; line-height: 1.45; }
   .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
   @media (min-width: 560px) { .grid { grid-template-columns: 1fr 1fr; } }
@@ -65,7 +73,11 @@
 <h2>Wind speed forecast</h2>
 <div class="moon-strip" id="moon-strip"></div>
 <div class="chart-wrap"><canvas id="chart"></canvas></div>
-<div class="chart-legend-note">Blue line: wind. Light blue area: gusts. <span style="color:#e74c3c">Red dashed</span>: 12kt windsurf. <span style="color:#f39c12">Orange dotted</span>: 10kt wing/windfoil. Moon strip shows daily phase (full/new = spring tides).</div>
+<div class="dir-strip-wrap">
+  <div class="dir-strip-title">Wind direction (arrow shows where wind is going)</div>
+  <div class="dir-strip" id="dir-strip"></div>
+</div>
+<div class="chart-legend-note">Blue line: wind. Light blue area: gusts. <span style="color:#e74c3c">Red dashed</span>: 12kt windsurf. <span style="color:#f39c12">Orange dotted</span>: 10kt wing/windfoil. Arrows on chart show direction (<span style="color:#27ae60">green</span> = preferred E/SE/S, gray = off-direction). Moon strip shows daily phase (full/new = spring tides).</div>
 
 <h2>Daily session rating</h2>
 <div id="grid" class="grid"></div>
@@ -77,13 +89,13 @@
 <a class="footer-link" href="https://www.windguru.cz/16146" target="_blank" rel="noopener">Open Windguru spot 16146</a>
 
 <script>
-// Scraped from windguru.cz/16146 (WG model) on 2026-05-10.
-const FETCHED_AT = "2026-05-10T06:06:40+04:00";
+// Scraped from windguru.cz/16146 (WG model) on 2026-05-11.
+const FETCHED_AT = "2026-05-11T06:07:32+04:00";
 const WG_DATA = {
-  dates: ["Sa 9. 06h", "Sa 9. 08h", "Sa 9. 10h", "Sa 9. 12h", "Sa 9. 14h", "Sa 9. 16h", "Sa 9. 18h", "Sa 9. 20h", "Sa 9. 22h", "Su 10. 03h", "Su 10. 05h", "Su 10. 07h", "Su 10. 09h", "Su 10. 11h", "Su 10. 13h", "Su 10. 15h", "Su 10. 17h", "Su 10. 19h", "Su 10. 21h", "Mo 11. 03h", "Mo 11. 05h", "Mo 11. 07h", "Mo 11. 09h", "Mo 11. 11h", "Mo 11. 13h", "Mo 11. 15h", "Mo 11. 17h", "Mo 11. 19h", "Mo 11. 21h", "Tu 12. 03h", "Tu 12. 05h", "Tu 12. 07h", "Tu 12. 09h", "Tu 12. 11h", "Tu 12. 13h", "Tu 12. 15h", "Tu 12. 17h", "Tu 12. 19h", "Tu 12. 21h", "We 13. 03h", "We 13. 06h", "We 13. 09h", "We 13. 12h", "We 13. 15h", "We 13. 18h", "We 13. 21h", "Th 14. 03h", "Th 14. 06h", "Th 14. 09h", "Th 14. 12h", "Th 14. 15h", "Th 14. 18h", "Th 14. 21h", "Fr 15. 03h", "Fr 15. 06h", "Fr 15. 09h", "Fr 15. 12h", "Fr 15. 15h", "Fr 15. 18h", "Fr 15. 21h", "Sa 16. 03h", "Sa 16. 06h", "Sa 16. 09h", "Sa 16. 12h", "Sa 16. 15h", "Sa 16. 18h", "Sa 16. 21h", "Su 17. 03h", "Su 17. 06h", "Su 17. 09h", "Su 17. 12h", "Su 17. 15h", "Su 17. 18h", "Su 17. 21h", "Mo 18. 03h", "Mo 18. 06h", "Mo 18. 09h", "Mo 18. 12h", "Mo 18. 15h", "Mo 18. 18h", "Mo 18. 21h", "Tu 19. 03h", "Tu 19. 06h", "Tu 19. 09h", "Tu 19. 12h", "Tu 19. 15h", "Tu 19. 18h", "Tu 19. 21h", "We 20. 03h", "We 20. 06h", "We 20. 09h", "We 20. 12h", "We 20. 15h", "We 20. 18h", "We 20. 21h", "Th 21. 03h", "Th 21. 06h", "Th 21. 09h", "Th 21. 12h", "Th 21. 15h", "Th 21. 18h", "Th 21. 21h", "Fr 22. 03h", "Fr 22. 06h", "Fr 22. 09h", "Fr 22. 12h", "Fr 22. 15h", "Fr 22. 18h", "Fr 22. 21h", "Sa 23. 03h", "Sa 23. 06h", "Sa 23. 09h", "Sa 23. 12h", "Sa 23. 15h", "Sa 23. 18h", "Sa 23. 21h", "Su 24. 03h", "Su 24. 06h", "Su 24. 09h", "Su 24. 12h", "Su 24. 15h", "Su 24. 18h", "Su 24. 21h"],
-  windspd: [10, 9, 8, 8, 7, 7, 7, 7, 7, 6, 7, 7, 6, 6, 7, 8, 8, 8, 7, 10, 10, 10, 9, 9, 10, 10, 10, 12, 12, 11, 10, 10, 9, 9, 10, 11, 11, 11, 12, 13, 13, 13, 13, 14, 15, 15, 13, 14, 12, 12, 13, 14, 13, 12, 12, 12, 12, 12, 11, 10, 10, 10, 11, 11, 12, 13, 12, 14, 14, 13, 13, 13, 12, 12, 12, 12, 12, 11, 10, 10, 11, 11, 10, 9, 9, 10, 10, 10, 9, 8, 7, 7, 8, 6, 7, 8, 7, 7, 8, 7, 6, 6, 7, 8, 7, 7, 7, 7, 5, 4, 5, 6, 8, 8, 8, 9, 11, 13, 12, 11, 9, 12, 11],
-  gust: [12, 11, 10, 10, 9, 9, 10, 9, 9, 8, 9, 8, 8, 8, 9, 10, 10, 10, 9, 12, 12, 12, 12, 12, 12, 13, 13, 14, 15, 14, 13, 13, 12, 12, 13, 14, 14, 14, 15, 16, 16, 17, 16, 17, 19, 19, 16, 17, 15, 15, 16, 18, 16, 15, 15, 15, 15, 14, 13, 12, 12, 13, 13, 13, 15, 15, 15, 16, 16, 16, 15, 15, 15, 14, 14, 14, 14, 14, 12, 12, 13, 13, 11, 11, 11, 12, 12, 12, 11, 10, 9, 9, 10, 8, 9, 10, 9, 9, 10, 9, 8, 8, 9, 10, 9, 9, 9, 8, 7, 6, 7, 8, 9, 10, 11, 11, 11, 13, 13, 12, 11, 13, 13],
-  dirDeg: [156, 152, 155, 154, 152, 145, 138, 135, 136, 127, 127, 125, 129, 147, 139, 140, 139, 139, 140, 146, 147, 147, 149, 158, 151, 149, 147, 144, 139, 139, 139, 137, 136, 142, 149, 153, 150, 148, 149, 139, 138, 139, 146, 147, 146, 146, 143, 146, 147, 151, 147, 149, 146, 139, 134, 138, 143, 141, 142, 145, 145, 144, 145, 148, 145, 144, 142, 151, 149, 150, 154, 150, 150, 149, 153, 152, 153, 153, 154, 155, 158, 162, 155, 168, 170, 170, 162, 167, 171, 167, 169, 164, 163, 154, 170, 169, 164, 158, 165, 165, 162, 170, 177, 174, 174, 176, 176, 171, 180, 162, 146, 136, 135, 129, 128, 131, 160, 158, 162, 160, 159, 159, 152]
+  dates: ["Su 10. 06h", "Su 10. 08h", "Su 10. 10h", "Su 10. 12h", "Su 10. 14h", "Su 10. 16h", "Su 10. 18h", "Su 10. 20h", "Su 10. 22h", "Mo 11. 03h", "Mo 11. 05h", "Mo 11. 07h", "Mo 11. 09h", "Mo 11. 11h", "Mo 11. 13h", "Mo 11. 15h", "Mo 11. 17h", "Mo 11. 19h", "Mo 11. 21h", "Tu 12. 03h", "Tu 12. 05h", "Tu 12. 07h", "Tu 12. 09h", "Tu 12. 11h", "Tu 12. 13h", "Tu 12. 15h", "Tu 12. 17h", "Tu 12. 19h", "Tu 12. 21h", "We 13. 03h", "We 13. 05h", "We 13. 07h", "We 13. 09h", "We 13. 11h", "We 13. 13h", "We 13. 15h", "We 13. 17h", "We 13. 19h", "We 13. 21h", "Th 14. 03h", "Th 14. 06h", "Th 14. 09h", "Th 14. 12h", "Th 14. 15h", "Th 14. 18h", "Th 14. 21h", "Fr 15. 03h", "Fr 15. 06h", "Fr 15. 09h", "Fr 15. 12h", "Fr 15. 15h", "Fr 15. 18h", "Fr 15. 21h", "Sa 16. 03h", "Sa 16. 06h", "Sa 16. 09h", "Sa 16. 12h", "Sa 16. 15h", "Sa 16. 18h", "Sa 16. 21h", "Su 17. 03h", "Su 17. 06h", "Su 17. 09h", "Su 17. 12h", "Su 17. 15h", "Su 17. 18h", "Su 17. 21h", "Mo 18. 03h", "Mo 18. 06h", "Mo 18. 09h", "Mo 18. 12h", "Mo 18. 15h", "Mo 18. 18h", "Mo 18. 21h", "Tu 19. 03h", "Tu 19. 06h", "Tu 19. 09h", "Tu 19. 12h", "Tu 19. 15h", "Tu 19. 18h", "Tu 19. 21h", "We 20. 03h", "We 20. 06h", "We 20. 09h", "We 20. 12h", "We 20. 15h", "We 20. 18h", "We 20. 21h", "Th 21. 03h", "Th 21. 06h", "Th 21. 09h", "Th 21. 12h", "Th 21. 15h", "Th 21. 18h", "Th 21. 21h", "Fr 22. 03h", "Fr 22. 06h", "Fr 22. 09h", "Fr 22. 12h", "Fr 22. 15h", "Fr 22. 18h", "Fr 22. 21h", "Sa 23. 03h", "Sa 23. 06h", "Sa 23. 09h", "Sa 23. 12h", "Sa 23. 15h", "Sa 23. 18h", "Sa 23. 21h", "Su 24. 03h", "Su 24. 06h", "Su 24. 09h", "Su 24. 12h", "Su 24. 15h", "Su 24. 18h", "Su 24. 21h", "Mo 25. 03h", "Mo 25. 06h", "Mo 25. 09h", "Mo 25. 12h", "Mo 25. 15h", "Mo 25. 18h", "Mo 25. 21h"],
+  windspd: [6, 6, 4, 4, 5, 7, 6, 6, 6, 10, 10, 10, 9, 10, 11, 12, 11, 11, 12, 12, 12, 10, 9, 10, 9, 11, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15, 13, 12, 13, 12, 15, 16, 14, 14, 13, 13, 13, 13, 14, 14, 13, 12, 12, 12, 12, 13, 11, 11, 11, 11, 11, 10, 12, 10, 11, 11, 10, 10, 10, 12, 11, 11, 12, 12, 12, 12, 12, 12, 11, 12, 10, 8, 8, 9, 9, 8, 8, 7, 6, 6, 6, 6, 6, 7, 7, 8, 9, 10, 11, 13, 15, 14, 15, 15, 16, 15, 14, 15, 17, 18, 17, 16, 15, 13, 13, 12, 14, 12, 12, 12],
+  gust: [7, 8, 6, 6, 7, 9, 8, 8, 8, 12, 12, 13, 12, 12, 13, 14, 14, 14, 15, 15, 14, 13, 12, 12, 12, 14, 18, 17, 17, 17, 17, 17, 18, 18, 19, 18, 18, 18, 18, 15, 16, 16, 15, 18, 20, 18, 17, 17, 16, 16, 17, 17, 17, 16, 15, 15, 14, 15, 15, 14, 14, 14, 13, 14, 12, 14, 12, 12, 13, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 14, 13, 13, 12, 10, 11, 11, 11, 10, 9, 8, 8, 8, 8, 7, 8, 9, 9, 10, 11, 12, 14, 16, 17, 17, 18, 18, 19, 19, 18, 19, 21, 22, 20, 19, 19, 13, 14, 14, 15, 14, 13, 13],
+  dirDeg: [112, 105, 111, 121, 128, 125, 127, 134, 140, 146, 142, 143, 140, 142, 144, 142, 138, 138, 138, 140, 134, 126, 124, 128, 134, 146, 147, 150, 147, 140, 151, 144, 144, 146, 147, 144, 143, 143, 146, 143, 140, 143, 148, 151, 146, 142, 144, 142, 145, 147, 147, 150, 150, 147, 145, 147, 151, 155, 157, 154, 155, 153, 151, 153, 150, 149, 153, 155, 150, 150, 152, 155, 156, 165, 166, 162, 163, 163, 167, 170, 175, 174, 164, 166, 169, 175, 181, 192, 189, 180, 183, 176, 156, 143, 143, 135, 133, 120, 117, 117, 113, 119, 122, 125, 131, 136, 130, 128, 133, 139, 134, 141, 148, 145, 145, 145, 133, 132, 129, 135, 137, 137, 149]
 };
 const WINDSURF_KT = 12, WINGFOIL_KT = 10, YEAR = 2026, MONTH = 4;
 
@@ -163,6 +175,46 @@ function render() {
 
   const labels = points.map(p => p.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }) + " " + String(p.hour).padStart(2,"0") + "h");
 
+  // Direction strip (separate row of arrows below the chart, all timesteps)
+  const dirStrip = document.getElementById("dir-strip");
+  if (dirStrip) {
+    dirStrip.innerHTML = points.map(p => {
+      const cls = isPreferred(p.dir) ? "pref" : "off";
+      const compass = dirToCompass(p.dir);
+      const dayHr = p.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }) + " " + String(p.hour).padStart(2,"0") + "h";
+      // Wind direction is "from" — flip 180° so arrow shows where wind is going
+      return `<div class="dir-cell ${cls}" title="${dayHr} — ${compass} ${p.dir}°"><svg width="9" height="9" viewBox="0 0 10 10" style="transform: rotate(${(p.dir + 180) % 360}deg);"><path d="M5 0.5 L8.5 8.5 L5 6.5 L1.5 8.5 Z"/></svg></div>`;
+    }).join("");
+  }
+
+  // Chart.js plugin: draw direction arrows on top of the wind line, every Nth point
+  const arrowPlugin = {
+    id: "directionArrows",
+    afterDatasetsDraw(chart) {
+      const meta = chart.getDatasetMeta(1); // wind dataset
+      if (!meta || !meta.data || !meta.data.length) return;
+      const ctx = chart.ctx;
+      const step = Math.max(1, Math.round(points.length / 30)); // ~30 arrows max
+      for (let i = 0; i < points.length; i += step) {
+        const el = meta.data[i]; if (!el) continue;
+        const p = points[i];
+        const xp = el.x, yp = el.y - 12;
+        ctx.save();
+        ctx.translate(xp, yp);
+        ctx.rotate(((p.dir + 180) % 360) * Math.PI / 180);
+        ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.lineTo(3, 4);
+        ctx.lineTo(0, 2);
+        ctx.lineTo(-3, 4);
+        ctx.closePath();
+        ctx.fillStyle = isPreferred(p.dir) ? "#27ae60" : "#999";
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  };
+
   if (typeof Chart !== "undefined") {
     const ctx = document.getElementById("chart").getContext("2d");
     new Chart(ctx, {
@@ -178,6 +230,7 @@ function render() {
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 16 } },
         interaction: { mode: "index", intersect: false },
         scales: {
           x: { ticks: { maxTicksLimit: 8, autoSkip: true, font: { size: 9 } }, grid: { display: false } },
@@ -185,9 +238,18 @@ function render() {
         },
         plugins: {
           legend: { position: "top", labels: { font: { size: 10 }, boxWidth: 12 } },
-          tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(1) + " kt"}` } }
+          tooltip: { callbacks: {
+            label: (c) => `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(1) + " kt"}`,
+            afterBody: (items) => {
+              const i = items[0]?.dataIndex;
+              if (i == null || !points[i]) return "";
+              const p = points[i];
+              return `Direction: ${dirToCompass(p.dir)} (${p.dir}°)`;
+            }
+          } }
         }
-      }
+      },
+      plugins: [arrowPlugin]
     });
   } else {
     document.querySelector(".chart-wrap").innerHTML = '<div class="err">Chart library failed to load — check your internet connection and reload.</div>';
@@ -243,6 +305,7 @@ function render() {
         <div class="row"><span class="k">Avg wind (08–18)</span><span class="v">${avg.toFixed(1)} kt</span></div>
         <div class="row"><span class="k">Peak wind</span><span class="v">${peak.toFixed(1)} kt</span></div>
         <div class="row"><span class="k">Peak gust</span><span class="v">${peakGust.toFixed(1)} kt</span></div>
+        <div class="row"><span class="k">Peak dir</span><span class="v" style="${dirOK ? 'color:#27ae60;font-weight:600' : 'color:#999'}">${dirToCompass(peakDir)} (${Math.round(peakDir)}°) ${dirOK ? '✓' : ''}</span></div>
         <div class="row"><span class="k">Avg dir</span><span class="v">${dirToCompass(meanDir)} (${Math.round(meanDir)}°)</span></div>
         <div class="row"><span class="k">Moon</span><span class="v">${moon.icon} ${moon.name}</span></div>
       </div>
