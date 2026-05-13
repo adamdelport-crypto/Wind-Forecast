@@ -274,4 +274,52 @@ function render() {
     const gusts = dd.points.map(p => p.g);
     const dirs = dd.points.map(p => p.dir);
     const avg = speeds.reduce((a,b)=>a+b,0) / speeds.length;
-    const peak = Ma
+    const peak = Math.max(...gusts);
+    const peakWs = Math.max(...speeds);
+    let sx = 0, sy = 0;
+    for (const d of dirs) { const r = d * Math.PI / 180; sx += Math.cos(r); sy += Math.sin(r); }
+    const meanDir = (Math.atan2(sy/dirs.length, sx/dirs.length) * 180/Math.PI + 360) % 360;
+    const compass = dirToCompass(meanDir);
+    const prefDir = isPreferred(meanDir);
+    const window = bestWindow(dd.points);
+
+    let cls = "no", badge = "NO", label = "Too light";
+    if (peakWs >= WINDSURF_KT && prefDir) { cls = "go"; badge = "WINDSURF"; label = "Windsurf"; goDays.push(dd.date); }
+    else if (peakWs >= WINGFOIL_KT && prefDir) { cls = "maybe"; badge = "WING / WINDFOIL"; label = "Wing / Windfoil"; maybeDays.push(dd.date); }
+    else if (peakWs >= WINGFOIL_KT && !prefDir) { cls = "no"; badge = "WRONG DIR"; label = "Wrong direction"; }
+
+    const power = powerIcons(peakWs);
+    const bestStr = window.startH != null
+      ? `${String(window.startH).padStart(2,"0")}:00–${String(window.endH).padStart(2,"0")}:00 · ${window.mean.toFixed(1)} kt`
+      : "—";
+
+    cards.push(`<div class="card ${cls}">
+      <div class="day">${fmtDay(dd.date)} <span class="badge ${cls}">${badge} ${power}</span></div>
+      <div class="row best"><span class="k">Best window</span><span class="v">${bestStr}</span></div>
+      <div class="row"><span class="k">Wind avg / peak</span><span class="v">${avg.toFixed(1)} / ${peakWs} kt</span></div>
+      <div class="row"><span class="k">Gust peak</span><span class="v">${peak} kt</span></div>
+      <div class="row"><span class="k">Direction</span><span class="v">${compass} (${Math.round(meanDir)}°)</span></div>
+    </div>`);
+  }
+
+  grid.innerHTML = cards.join("");
+
+  if (goDays.length) {
+    alertsEl.className = "alerts go";
+    alertsEl.innerHTML = `<strong>🏄 Windsurf days:</strong> ${goDays.map(fmtDay).join(", ")}`;
+  } else if (maybeDays.length) {
+    alertsEl.className = "alerts maybe";
+    alertsEl.innerHTML = `<strong>🪁 Wing / windfoil days:</strong> ${maybeDays.map(fmtDay).join(", ")}`;
+  } else {
+    alertsEl.className = "alerts";
+    alertsEl.innerHTML = "No sessionable days in the next 10 — check back tomorrow.";
+  }
+
+  const updated = document.getElementById("updated");
+  updated.textContent = `Forecast scraped ${new Date(FETCHED_AT).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} Mahé time.`;
+}
+
+render();
+</script>
+</body>
+</html>
