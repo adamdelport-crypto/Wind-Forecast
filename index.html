@@ -19,7 +19,7 @@
   .alerts { margin-bottom: 12px; padding: 11px 13px; border-radius: 10px; background: #f1f1f1; border-left: 4px solid #999; font-size: 13px; color: #555; line-height: 1.45; }
   .alerts.go { background: #e8faf0; border-left-color: #2ecc71; color: #155f33; }
   .alerts.maybe { background: #fdf6dd; border-left-color: #f1c40f; color: #6a5a00; }
-  .chart-wrap { background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 8px; margin-bottom: 6px; height: 240px; }
+  .chart-wrap { background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 8px; margin-bottom: 6px; height: 260px; }
   .moon-strip { display: flex; gap: 0; margin-bottom: 4px; padding: 4px 6px; background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; font-size: 10px; color: #555; align-items: center; overflow: hidden; }
   .moon-cell { flex: 1; text-align: center; min-width: 0; padding: 1px 0; }
   .moon-cell .icon { font-size: 15px; display: block; line-height: 1.1; }
@@ -64,38 +64,44 @@
 </div>
 
 <div class="source-note">
-  <strong>Source:</strong> Windguru WG model (composite of all global models) for spot 16146. Refreshed daily at 06:00 Mahé time.
+  <strong>Source:</strong> Wind from Windguru WG model (spot 16146). Tide from Open-Meteo Marine API. Refreshed daily at 06:00 Mahé time.
   <a href="https://www.windguru.cz/16146" target="_blank" rel="noopener">View on Windguru →</a>
 </div>
 
 <div id="alerts" class="alerts">Loading…</div>
 
-<h2>Wind speed forecast</h2>
+<h2>Wind &amp; tide forecast</h2>
 <div class="moon-strip" id="moon-strip"></div>
 <div class="chart-wrap"><canvas id="chart"></canvas></div>
 <div class="dir-strip-wrap">
   <div class="dir-strip-title">Wind direction (arrow shows where wind is going)</div>
   <div class="dir-strip" id="dir-strip"></div>
 </div>
-<div class="chart-legend-note">Blue line: wind. Light blue area: gusts. <span style="color:#e74c3c">Red dashed</span>: 12kt windsurf. <span style="color:#f39c12">Orange dotted</span>: 10kt wing/windfoil. Arrows on chart show direction (<span style="color:#27ae60">green</span> = preferred E/SE/S, gray = off-direction). Moon strip shows daily phase (full/new = spring tides).</div>
+<div class="chart-legend-note">Blue line: wind. Light blue area: gusts. <span style="color:#e74c3c">Red dashed</span>: 12kt windsurf. <span style="color:#f39c12">Orange dotted</span>: 10kt wing/windfoil. <span style="color:#16a085">Teal line</span>: tide height (right axis, metres above MSL). Arrows on chart show direction (<span style="color:#27ae60">green</span> = preferred E/SE/S, gray = off-direction). Moon strip shows daily phase (full/new = spring tides).</div>
 
 <h2>Daily session rating</h2>
 <div id="grid" class="grid"></div>
 <div class="updated" id="updated"></div>
 <div class="legend">
-  Wind/gust in knots. Direction shown as compass (e.g. SE = 135°). <strong>WINDSURF</strong> = peak ≥12kt with E/SE/S direction. <strong>WING / WINDFOIL</strong> = ≥10kt with preferred direction (same wind range). <strong>WRONG DIR</strong> = strong enough but off-direction. Daytime hours 08:00–18:00 Mahé.
+  Wind/gust in knots. Direction shown as compass (e.g. SE = 135°). Tide height in metres relative to Mean Sea Level. <strong>WINDSURF</strong> = peak ≥12kt with E/SE/S direction. <strong>WING / WINDFOIL</strong> = ≥10kt with preferred direction (same wind range). <strong>WRONG DIR</strong> = strong enough but off-direction. Daytime hours 08:00–18:00 Mahé.
   <br><strong>Power scale (peak wind):</strong> 🔥 10–14kt · 🔥🔥 15–18kt · 🔥🔥🔥 19–24kt · ☢️ 25kt+.
 </div>
 <a class="footer-link" href="https://www.windguru.cz/16146" target="_blank" rel="noopener">Open Windguru spot 16146</a>
 
 <script>
-// Scraped from windguru.cz/16146 (WG model) on 2026-05-19.
-const FETCHED_AT = "2026-05-19T12:37:54+04:00";
+// Scraped from windguru.cz/16146 (WG model) + open-meteo marine API on 2026-05-20.
+const FETCHED_AT = "2026-05-20T08:40:56+04:00";
 const WG_DATA = {
-  dates: ["Mo 18. 12h","Mo 18. 14h","Mo 18. 16h","Mo 18. 18h","Mo 18. 20h","Mo 18. 22h","Tu 19. 03h","Tu 19. 05h","Tu 19. 07h","Tu 19. 09h","Tu 19. 11h","Tu 19. 13h","Tu 19. 15h","Tu 19. 17h","Tu 19. 19h","Tu 19. 21h","We 20. 03h","We 20. 05h","We 20. 07h","We 20. 09h","We 20. 11h","We 20. 13h","We 20. 15h","We 20. 17h","We 20. 19h","We 20. 21h","Th 21. 03h","Th 21. 05h","Th 21. 07h","Th 21. 09h","Th 21. 11h","Th 21. 13h","Th 21. 15h","Th 21. 17h","Th 21. 19h","Th 21. 21h","Fr 22. 03h","Fr 22. 05h","Fr 22. 09h","Fr 22. 12h","Fr 22. 15h","Fr 22. 18h","Fr 22. 21h","Sa 23. 03h","Sa 23. 06h","Sa 23. 09h","Sa 23. 12h","Sa 23. 15h","Sa 23. 18h","Sa 23. 21h","Su 24. 03h","Su 24. 06h","Su 24. 09h","Su 24. 12h","Su 24. 15h","Su 24. 18h","Su 24. 21h","Mo 25. 03h","Mo 25. 06h","Mo 25. 09h","Mo 25. 12h","Mo 25. 15h","Mo 25. 18h","Mo 25. 21h","Tu 26. 03h","Tu 26. 06h","Tu 26. 09h","Tu 26. 12h","Tu 26. 15h","Tu 26. 18h","Tu 26. 21h","We 27. 03h","We 27. 06h","We 27. 09h","We 27. 12h","We 27. 15h","We 27. 18h","We 27. 21h","Th 28. 03h","Th 28. 06h","Th 28. 09h","Th 28. 12h","Th 28. 15h","Th 28. 18h","Th 28. 21h","Fr 29. 03h","Fr 29. 06h","Fr 29. 09h","Fr 29. 12h","Fr 29. 15h","Fr 29. 18h","Fr 29. 21h","Sa 30. 03h","Sa 30. 06h","Sa 30. 09h","Sa 30. 12h","Sa 30. 15h","Sa 30. 18h","Sa 30. 21h","Su 31. 03h","Su 31. 06h","Su 31. 09h","Su 31. 12h","Su 31. 15h","Su 31. 18h","Su 31. 21h","Mo 1. 03h","Mo 1. 06h","Mo 1. 09h","Mo 1. 12h","Mo 1. 15h","Mo 1. 18h","Mo 1. 21h","Tu 2. 03h","Tu 2. 06h","Tu 2. 09h","Tu 2. 12h","Tu 2. 15h","Tu 2. 18h","Tu 2. 21h","We 3. 03h","We 3. 06h","We 3. 09h","We 3. 12h"],
-  windspd: [11,10,10,10,9,9,7,8,8,8,9,8,8,7,6,6,9,7,7,8,8,9,8,8,10,8,8,7,6,6,6,7,8,8,10,10,14,15,15,15,15,15,14,15,16,15,16,14,14,13,13,15,15,16,15,14,14,14,14,13,12,13,13,13,12,12,12,12,13,13,12,12,14,13,14,14,13,14,15,15,15,15,15,16,15,16,16,16,16,16,16,16,17,17,17,17,17,17,16,16,16,16,16,17,17,16,15,16,15,14,15,15,15,15,16,16,16,17,16,17,17,18,18,18],
-  gust: [14,13,12,12,12,12,10,11,10,10,11,11,10,10,8,8,11,9,9,10,11,11,10,10,13,11,11,9,8,8,8,9,10,11,12,13,17,18,18,19,19,19,18,18,19,19,19,18,17,16,16,19,18,19,18,17,18,17,17,16,15,15,16,16,15,15,15,15,15,16,15,15,16,16,17,17,17,17,19,19,19,19,19,19,19,20,20,19,19,19,19,20,21,21,21,21,20,20,20,20,20,19,20,20,20,19,18,20,19,18,19,20,19,20,21,21,20,22,20,22,23,23,22,22],
-  dirDeg: [187,186,183,182,184,187,195,192,200,200,201,204,200,194,203,223,241,239,246,255,263,255,250,252,257,250,236,227,222,211,193,169,143,134,135,137,145,147,150,156,155,153,153,156,155,152,154,152,152,154,157,152,150,153,152,153,150,147,145,142,138,137,134,130,129,130,130,133,132,126,126,132,134,134,129,127,132,130,135,136,140,144,140,136,139,141,139,139,139,134,132,135,135,132,136,142,139,136,138,141,143,142,138,137,135,139,138,138,140,148,149,150,154,155,151,148,145,134,136,130,137,138,144,146]
+  dates: ["Tu 19. 12h","Tu 19. 14h","Tu 19. 16h","Tu 19. 18h","Tu 19. 20h","Tu 19. 22h","We 20. 03h","We 20. 05h","We 20. 07h","We 20. 09h","We 20. 11h","We 20. 13h","We 20. 15h","We 20. 17h","We 20. 19h","We 20. 21h","Th 21. 03h","Th 21. 05h","Th 21. 07h","Th 21. 09h","Th 21. 11h","Th 21. 13h","Th 21. 15h","Th 21. 17h","Th 21. 19h","Th 21. 21h","Fr 22. 03h","Fr 22. 05h","Fr 22. 07h","Fr 22. 09h","Fr 22. 11h","Fr 22. 13h","Fr 22. 15h","Fr 22. 17h","Fr 22. 19h","Fr 22. 21h","Sa 23. 03h","Sa 23. 06h","Sa 23. 09h","Sa 23. 12h","Sa 23. 15h","Sa 23. 18h","Sa 23. 21h","Su 24. 03h","Su 24. 06h","Su 24. 09h","Su 24. 12h","Su 24. 15h","Su 24. 18h","Su 24. 21h","Mo 25. 03h","Mo 25. 06h","Mo 25. 09h","Mo 25. 12h","Mo 25. 15h","Mo 25. 18h","Mo 25. 21h","Tu 26. 03h","Tu 26. 06h","Tu 26. 09h","Tu 26. 12h","Tu 26. 15h","Tu 26. 18h","Tu 26. 21h","We 27. 03h","We 27. 06h","We 27. 09h","We 27. 12h","We 27. 15h","We 27. 18h","We 27. 21h","Th 28. 03h","Th 28. 06h","Th 28. 09h","Th 28. 12h","Th 28. 15h","Th 28. 18h","Th 28. 21h","Fr 29. 03h","Fr 29. 06h","Fr 29. 09h","Fr 29. 12h","Fr 29. 15h","Fr 29. 18h","Fr 29. 21h","Sa 30. 03h","Sa 30. 06h","Sa 30. 09h","Sa 30. 12h","Sa 30. 15h","Sa 30. 18h","Sa 30. 21h","Su 31. 03h","Su 31. 06h","Su 31. 09h","Su 31. 12h","Su 31. 15h","Su 31. 18h","Su 31. 21h","Mo 1. 03h","Mo 1. 06h","Mo 1. 09h","Mo 1. 12h","Mo 1. 15h","Mo 1. 18h","Mo 1. 21h","Tu 2. 03h","Tu 2. 06h","Tu 2. 09h","Tu 2. 12h","Tu 2. 15h","Tu 2. 18h","Tu 2. 21h","We 3. 03h","We 3. 06h","We 3. 09h","We 3. 12h","We 3. 15h","We 3. 18h","We 3. 21h"],
+  windspd: [8,8,7,5,4,6,9,8,9,11,11,12,10,10,10,11,11,11,10,8,6,6,8,10,11,12,13,14,15,14,14,14,14,14,13,13,12,14,14,15,13,13,13,13,13,13,14,14,14,14,13,13,11,11,13,13,12,12,13,13,12,13,14,13,13,13,13,14,15,14,14,15,15,16,16,16,16,16,16,16,16,15,15,15,15,16,16,16,16,16,18,17,17,17,16,16,16,16,15,16,16,16,16,16,16,16,17,15,16,17,17,16,16,16,17,17,17,17,18,17],
+  gust: [11,10,9,7,6,8,11,11,12,13,14,15,13,14,13,14,15,13,13,11,9,9,10,12,14,15,16,18,18,18,17,18,18,17,16,16,15,17,18,19,17,16,16,16,17,17,18,18,18,17,16,16,15,14,15,15,15,15,16,16,16,17,18,17,16,17,16,17,18,17,18,19,19,20,20,20,20,20,19,20,19,18,18,18,18,19,19,19,20,20,21,20,21,21,20,20,20,20,19,19,20,20,20,20,20,20,21,19,19,21,20,19,19,19,20,20,19,20,21,21],
+  dirDeg: [204,201,198,202,226,244,261,263,269,269,260,247,246,246,247,245,243,239,238,239,230,209,190,169,153,152,151,154,150,151,157,161,160,153,152,152,156,152,151,153,150,148,151,151,153,155,152,147,141,139,141,141,141,143,139,138,132,131,127,123,116,116,115,119,125,125,127,129,126,122,126,130,132,131,137,135,135,137,145,143,142,143,140,136,139,137,134,138,138,140,136,140,140,139,139,137,139,138,144,142,141,146,150,144,135,138,142,141,146,149,149,151,152,143,144,147,148,147,143,140]
+};
+// Tide height in metres above Mean Sea Level. Source: open-meteo marine API for lat -4.6191, lon 55.4513.
+// hourly[i] corresponds to startISO + i hours (Mahé local time).
+const TIDE_DATA = {
+  startISO: "2026-05-20T00:00+04:00",
+  hourly: [-0.34,-0.39,-0.3,-0.1,0.14,0.34,0.46,0.45,0.33,0.12,-0.1,-0.28,-0.33,-0.26,-0.07,0.23,0.57,0.87,1.06,1.11,1.01,0.77,0.45,0.12,-0.14,-0.29,-0.32,-0.22,-0.04,0.17,0.34,0.43,0.41,0.3,0.13,-0.04,-0.18,-0.22,-0.15,0.03,0.28,0.56,0.8,0.94,0.96,0.86,0.65,0.38,0.11,-0.1,-0.22,-0.24,-0.15,0.01,0.19,0.34,0.42,0.41,0.34,0.21,0.06,-0.04,-0.09,-0.05,0.08,0.28,0.49,0.67,0.78,0.79,0.7,0.54,0.32,0.09,-0.08,-0.19,-0.2,-0.12,0.02,0.18,0.33,0.42,0.45,0.41,0.32,0.2,0.1,0.04,0.04,0.12,0.25,0.4,0.55,0.64,0.66,0.6,0.47,0.29,0.11,-0.05,-0.14,-0.16,-0.1,0.04,0.2,0.35,0.47,0.53,0.52,0.45,0.33,0.21,0.12,0.07,0.08,0.17,0.29,0.41,0.49,0.53,0.5,0.4,0.25,0.08,-0.07,-0.17,-0.18,-0.11,0.03,0.21,0.39,0.54,0.62,0.62,0.54,0.41,0.26,0.12,0.03,0.01,0.06,0.17,0.28,0.39,0.45,0.44,0.35,0.21,0.05,-0.09,-0.19,-0.19,-0.1,0.06,0.26,0.47,0.64,0.73,0.72,0.62,0.46,0.26,0.07,-0.05,-0.09,-0.04,0.07,0.21,0.34,0.41,0.41,0.33,0.19,0.02,-0.12,-0.21,-0.19,-0.08,0.12,0.36,0.59,0.76,0.84,0.8,0.66,0.44,0.2,-0.01,-0.14,-0.17,-0.1,0.04,0.2,0.34,0.42,0.41,0.32,0.16,-0.01,-0.15,-0.21,-0.16,0,0.24,0.51,0.74,0.89,0.93,0.84,0.64,0.38,0.11,-0.11,-0.22,-0.22,-0.11,0.06,0.23,0.37,0.43]
 };
 const WINDSURF_KT = 12, WINGFOIL_KT = 10, YEAR = 2026, MONTH = 4;
 
@@ -110,6 +116,18 @@ function powerIcons(peak) {
   if (peak >= 15) return "🔥🔥";
   if (peak >= 10) return "🔥";
   return "";
+}
+
+function tideAt(date) {
+  // Linearly interpolate tide level (metres) at the given Date, from TIDE_DATA.hourly.
+  // startISO is in Mahé local time (+04:00); we convert input to that frame by using getTime().
+  const start = new Date(TIDE_DATA.startISO).getTime();
+  const hoursSince = (date.getTime() - start) / 3600000;
+  if (hoursSince < 0 || hoursSince > TIDE_DATA.hourly.length - 1) return null;
+  const i = Math.floor(hoursSince), frac = hoursSince - i;
+  const a = TIDE_DATA.hourly[i], b = TIDE_DATA.hourly[i + 1];
+  if (a == null || b == null) return null;
+  return a + (b - a) * frac;
 }
 
 function bestWindow(dayPoints) {
@@ -158,7 +176,8 @@ function render() {
 
   const points = WG_DATA.dates.map((label, i) => {
     const p = parseLabel(label); if (!p) return null;
-    return { date: buildDate(p.dom, p.hour), dom: p.dom, hour: p.hour, ws: WG_DATA.windspd[i], g: WG_DATA.gust[i], dir: WG_DATA.dirDeg[i] };
+    const date = buildDate(p.dom, p.hour);
+    return { date, dom: p.dom, hour: p.hour, ws: WG_DATA.windspd[i], g: WG_DATA.gust[i], dir: WG_DATA.dirDeg[i], tide: tideAt(date) };
   }).filter(x => x);
 
   const moonStrip = document.getElementById("moon-strip");
@@ -182,7 +201,6 @@ function render() {
       const cls = isPreferred(p.dir) ? "pref" : "off";
       const compass = dirToCompass(p.dir);
       const dayHr = p.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" }) + " " + String(p.hour).padStart(2,"0") + "h";
-      // Wind direction is "from" — flip 180° so arrow shows where wind is going
       return `<div class="dir-cell ${cls}" title="${dayHr} — ${compass} ${p.dir}°"><svg width="9" height="9" viewBox="0 0 10 10" style="transform: rotate(${(p.dir + 180) % 360}deg);"><path d="M5 0.5 L8.5 8.5 L5 6.5 L1.5 8.5 Z"/></svg></div>`;
     }).join("");
   }
@@ -194,7 +212,7 @@ function render() {
       const meta = chart.getDatasetMeta(1); // wind dataset
       if (!meta || !meta.data || !meta.data.length) return;
       const ctx = chart.ctx;
-      const step = Math.max(1, Math.round(points.length / 30)); // ~30 arrows max
+      const step = Math.max(1, Math.round(points.length / 30));
       for (let i = 0; i < points.length; i += step) {
         const el = meta.data[i]; if (!el) continue;
         const p = points[i];
@@ -222,10 +240,11 @@ function render() {
       data: {
         labels,
         datasets: [
-          { label: "Gust", data: points.map(p=>p.g), borderColor: "#aed6f1", backgroundColor: "rgba(174,214,241,0.4)", tension: 0.25, pointRadius: 0, borderWidth: 1.2, fill: true },
-          { label: "Wind", data: points.map(p=>p.ws), borderColor: "#1f78b4", backgroundColor: "transparent", tension: 0.25, pointRadius: 0, borderWidth: 2.2 },
-          { label: "Windsurf 12kt", data: labels.map(()=>12), borderColor: "#e74c3c", borderDash: [4,4], pointRadius: 0, borderWidth: 1.2, fill: false },
-          { label: "Wing/Windfoil 10kt", data: labels.map(()=>10), borderColor: "#f39c12", borderDash: [2,3], pointRadius: 0, borderWidth: 1.2, fill: false },
+          { label: "Gust", data: points.map(p=>p.g), borderColor: "#aed6f1", backgroundColor: "rgba(174,214,241,0.4)", tension: 0.25, pointRadius: 0, borderWidth: 1.2, fill: true, yAxisID: "y" },
+          { label: "Wind", data: points.map(p=>p.ws), borderColor: "#1f78b4", backgroundColor: "transparent", tension: 0.25, pointRadius: 0, borderWidth: 2.2, yAxisID: "y" },
+          { label: "Windsurf 12kt", data: labels.map(()=>12), borderColor: "#e74c3c", borderDash: [4,4], pointRadius: 0, borderWidth: 1.2, fill: false, yAxisID: "y" },
+          { label: "Wing/Windfoil 10kt", data: labels.map(()=>10), borderColor: "#f39c12", borderDash: [2,3], pointRadius: 0, borderWidth: 1.2, fill: false, yAxisID: "y" },
+          { label: "Tide (m)", data: points.map(p=>p.tide), borderColor: "#16a085", backgroundColor: "rgba(22,160,133,0.08)", tension: 0.35, pointRadius: 0, borderWidth: 1.6, fill: true, yAxisID: "y1" },
         ]
       },
       options: {
@@ -234,12 +253,16 @@ function render() {
         interaction: { mode: "index", intersect: false },
         scales: {
           x: { ticks: { maxTicksLimit: 8, autoSkip: true, font: { size: 9 } }, grid: { display: false } },
-          y: { title: { display: true, text: "kt", font: { size: 11 } }, beginAtZero: true, ticks: { font: { size: 10 } } }
+          y: { title: { display: true, text: "kt", font: { size: 11 } }, beginAtZero: true, ticks: { font: { size: 10 } }, position: "left" },
+          y1: { title: { display: true, text: "m", font: { size: 11 }, color: "#16a085" }, ticks: { font: { size: 10 }, color: "#16a085" }, grid: { drawOnChartArea: false }, position: "right" }
         },
         plugins: {
           legend: { position: "top", labels: { font: { size: 10 }, boxWidth: 12 } },
           tooltip: { callbacks: {
-            label: (c) => `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(1) + " kt"}`,
+            label: (c) => {
+              if (c.dataset.label === "Tide (m)") return `Tide: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(2) + " m"}`;
+              return `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y.toFixed(1) + " kt"}`;
+            },
             afterBody: (items) => {
               const i = items[0]?.dataIndex;
               if (i == null || !points[i]) return "";
@@ -283,6 +306,10 @@ function render() {
     const prefDir = isPreferred(meanDir);
     const window = bestWindow(dd.points);
 
+    // Tide range during the day (08:00-18:00 daytime points)
+    const tides = dd.points.map(p => p.tide).filter(v => v != null);
+    const tideRange = tides.length ? `${Math.min(...tides).toFixed(2)} to ${Math.max(...tides).toFixed(2)} m` : "—";
+
     let cls = "no", badge = "NO", label = "Too light";
     if (peakWs >= WINDSURF_KT && prefDir) { cls = "go"; badge = "WINDSURF"; label = "Windsurf"; goDays.push(dd.date); }
     else if (peakWs >= WINGFOIL_KT && prefDir) { cls = "maybe"; badge = "WING / WINDFOIL"; label = "Wing / Windfoil"; maybeDays.push(dd.date); }
@@ -299,6 +326,7 @@ function render() {
       <div class="row"><span class="k">Wind avg / peak</span><span class="v">${avg.toFixed(1)} / ${peakWs} kt</span></div>
       <div class="row"><span class="k">Gust peak</span><span class="v">${peak} kt</span></div>
       <div class="row"><span class="k">Direction</span><span class="v">${compass} (${Math.round(meanDir)}°)</span></div>
+      <div class="row"><span class="k">Tide (daytime)</span><span class="v">${tideRange}</span></div>
     </div>`);
   }
 
