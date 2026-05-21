@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d6efd">
+<title>Mahé Surf Forecast — Multi-Spot</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", sans-serif; margin: 0; padding: 14px 12px 28px; background: #f4f6f8; color: #1a1a1a; max-width: 920px; margin-inline: auto; }
+  .header { padding: 14px 14px; background: linear-gradient(135deg,#0d6efd 0%,#0a58ca 100%); color: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(13,110,253,0.18); }
+  .header h1 { font-size: 18px; margin: 0 0 2px 0; line-height: 1.25; }
+  .header .sub { font-size: 12px; opacity: 0.92; }
+  .source-note { font-size: 11px; padding: 8px 10px; border-radius: 8px; background: #e8f1ff; border-left: 3px solid #0a58ca; margin-bottom: 12px; line-height: 1.45; color: #0a3a7a; }
+  .source-note a { color: #0a3a7a; font-weight: 600; }
+  .alerts { margin-bottom: 12px; padding: 11px 13px; border-radius: 10px; background: #f1f1f1; border-left: 4px solid #999; font-size: 13px; color: #555; line-height: 1.45; }
+  .alerts.go { background: #e8faf0; border-left-color: #2ecc71; color: #155f33; }
+  .alerts.maybe { background: #fdf6dd; border-left-color: #f1c40f; color: #6a5a00; }
+
+  .day-card { background: #fff; border: 1px solid #e2e2e2; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .day-card.go { border-left: 4px solid #2ecc71; }
+  .day-card.maybe { border-left: 4px solid #f1c40f; }
+  .day-card.no { opacity: 0.78; }
+  .day-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .day-title { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .day-summary { font-size: 12px; color: #666; font-variant-numeric: tabular-nums; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 700; white-space: nowrap; letter-spacing: 0.3px; }
+  .badge.go { background: #2ecc71; color: white; }
+  .badge.maybe { background: #f1c40f; color: #333; }
+  .badge.no { background: #d5d5d5; color: #555; }
+  .tides-line { display: flex; gap: 16px; font-size: 11.5px; color: #555; margin-bottom: 10px; flex-wrap: wrap; padding: 4px 6px; background: #f9f9fb; border-radius: 6px; }
+  .tide-hi { color: #16a085; }
+  .tide-lo { color: #c0392b; }
+
+  .spots-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 640px) { .spots-row { grid-template-columns: 1fr 1fr 1fr; } }
+
+  .spot-tile { padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e2e2; background: #fafbfc; font-size: 12px; }
+  .spot-tile.go { background: #f0fcf5; border-color: #2ecc71; }
+  .spot-tile.maybe { background: #fffaea; border-color: #f1c40f; }
+  .spot-tile.no { background: #fafbfc; }
+  .spot-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .coast { font-size: 9.5px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.5px; background: #eee; padding: 1px 5px; border-radius: 3px; }
+  .winner { font-size: 10px; color: #f5a623; font-weight: 700; margin-left: auto; }
+  .rating-line { font-size: 12px; margin-bottom: 5px; }
+  .rating-line .stars { color: #f5a623; letter-spacing: 1px; }
+  .rating-line .rating-num { color: #666; font-size: 11px; }
+  .spot-row { display: flex; justify-content: space-between; padding: 1px 0; font-size: 11.5px; }
+  .spot-row .k { color: #888; }
+  .spot-row .v { color: #222; font-variant-numeric: tabular-nums; }
+
+  .updated { font-size: 11px; color: #888; margin-top: 10px; padding: 0 4px; }
+  .legend { font-size: 11px; color: #777; margin-top: 10px; line-height: 1.55; padding: 8px 10px; background: #fafbfc; border-radius: 6px; }
+  .footer-links { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .footer-link { flex: 1; min-width: 140px; text-align: center; padding: 8px; background: #ffffff; border: 1px solid #e2e2e2; border-radius: 8px; color: #0d6efd; text-decoration: none; font-size: 12px; font-weight: 600; }
+  .footer-link:active { background: #eef5fa; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏄‍♂️ Mahé Surf Forecast — Multi-Spot</h1>
+  <div class="sub">Anse Intendance · Police Bay · Grande Anse · 6-day outlook</div>
+</div>
+
+<div class="source-note">
+  <strong>Source:</strong> surf-forecast.com break pages for three Mahé spots. Same swell &amp; tide everywhere (one ocean), but wind state differs by coast orientation — Intendance &amp; Police Bay face south, Grande Anse faces west. Three forecast periods/day: AM ≈06–12, PM ≈12–18, Night ≈18–06.
+</div>
+
+<div id="alerts" class="alerts">Loading…</div>
+
+<div id="grid"></div>
+<div class="updated" id="updated"></div>
+
+<div class="legend">
+  <strong>Star pick</strong> = best spot for the day (highest wave × period × wind quality / wind speed). <strong>SURF</strong> = ≥0.7m, ≥7s, wind &lt;18kt in any AM/PM period. <strong>WINDY</strong> = swell/period OK but too windy. <strong>NO</strong> = swell or period below threshold. Wind state: <strong>Offshore</strong> (cleanest) → <strong>Cross-off</strong> → <strong>Cross</strong> → <strong>Cross-on</strong> → <strong>Onshore</strong> (worst).
+</div>
+
+<div class="footer-links">
+  <a class="footer-link" href="https://www.surf-forecast.com/breaks/Intendance/forecasts/latest/six_day" target="_blank" rel="noopener">Intendance →</a>
+  <a class="footer-link" href="https://www.surf-forecast.com/breaks/Police-Bay/forecasts/latest/six_day" target="_blank" rel="noopener">Police Bay →</a>
+  <a class="footer-link" href="https://www.surf-forecast.com/breaks/Grand-Anse_Mahe/forecasts/latest/six_day" target="_blank" rel="noopener">Grande Anse →</a>
+</div>
+
+<script id="surf-data" type="application/json">
+{"fetchedAt": "2026-05-21T07:35:00+04:00", "todayIso": "2026-05-21", "todayPadding": 2, "times": ["PM", "Night", "AM", "PM", "Night", "AM", "PM", "Night", "AM", "PM", "Night", "AM", "PM", "Night", "AM", "PM", "Night", "AM", "PM", "Night"], "dayLabels": [null, null, "Friday\n22", "Friday\n22", "Friday\n22", "Saturday\n23", "Saturday\n23", "Saturday\n23", "Sunday\n24", "Sunday\n24", "Sunday\n24", "Monday\n25", "Monday\n25", "Monday\n25", "Tuesday\n26", "Tuesday\n26", "Tuesday\n26", "Wednesday\n27", "Wednesday\n27", "Wednesday\n27"], "swell": [{"h": 1.4, "dir": "SW", "period": 8}, {"h": 1.3, "dir": "SW", "period": 8}, {"h": 1, "dir": "SW", "period": 8}, {"h": 0.6, "dir": "S", "period": 12}, {"h": 1.5, "dir": "SSE", "period": 6}, {"h": 1.3, "dir": "SSE", "period": 6}, {"h": 0.6, "dir": "S", "period": 19}, {"h": 1, "dir": "S", "period": 18}, {"h": 1.1, "dir": "S", "period": 16}, {"h": 1, "dir": "S", "period": 15}, {"h": 1.1, "dir": "S", "period": 14}, {"h": 0.9, "dir": "S", "period": 13}, {"h": 0.9, "dir": "S", "period": 13}, {"h": 1.1, "dir": "S", "period": 16}, {"h": 1.9, "dir": "S", "period": 15}, {"h": 1.7, "dir": "S", "period": 14}, {"h": 1.7, "dir": "S", "period": 13}, {"h": 1.1, "dir": "S", "period": 13}, {"h": 0.9, "dir": "S", "period": 12}, {"h": 0.9, "dir": "S", "period": 12}], "tideHigh": [[], [{"time": "8:07PM", "height": 1.36}], [{"time": "9:01AM", "height": 0.87}], [], [{"time": "9:04PM", "height": 1.21}], [{"time": "10:21AM", "height": 0.91}], [], [{"time": "10:11PM", "height": 1.07}], [{"time": "11:45AM", "height": 0.99}], [], [{"time": "11:29PM", "height": 0.96}], [{"time": "12:55PM", "height": 1.09}], [], [{"time": "00:47AM", "height": 0.89}], [], [{"time": "1:48PM", "height": 1.19}], [{"time": "1:53AM", "height": 0.86}], [], [{"time": "2:29PM", "height": 1.27}], [{"time": "2:46AM", "height": 0.85}]], "tideLow": [[{"time": "1:25PM", "height": 0.25}], [{"time": "3:06AM", "height": 0.18}], [], [{"time": "2:33PM", "height": 0.38}], [], [{"time": "4:06AM", "height": 0.24}], [{"time": "4:02PM", "height": 0.48}], [], [{"time": "5:08AM", "height": 0.28}], [{"time": "5:45PM", "height": 0.52}], [], [{"time": "6:06AM", "height": 0.3}], [], [{"time": "7:16PM", "height": 0.47}], [{"time": "6:58AM", "height": 0.3}], [], [{"time": "8:22PM", "height": 0.39}], [{"time": "7:43AM", "height": 0.29}], [], [{"time": "9:12PM", "height": 0.3}]], "tempMax": [27, 27, 27, 27, 26, 27, 27, 26, 26, 27, 26, 26, 27, 27, 27, 27, 27, 27, 27, 27], "spots": {"intendance": {"name": "Anse Intendance", "shortName": "Intendance", "coast": "south", "url": "https://www.surf-forecast.com/breaks/Intendance/forecasts/latest/six_day", "rating": [0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0], "wind": [{"speed": 25, "dir": "W"}, {"speed": 20, "dir": "W"}, {"speed": 10, "dir": "SSW"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 20, "dir": "SE"}, {"speed": 20, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "SE"}], "windState": ["cross-on", "cross-on", "cross-on", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross-on", "cross", "cross", "cross-off", "cross-off", "cross-off", "cross-off", "cross"]}, "grandanse": {"name": "Grande Anse (Mahé)", "shortName": "Grand Anse", "coast": "west", "url": "https://www.surf-forecast.com/breaks/Grand-Anse_Mahe/forecasts/latest/six_day", "rating": [0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 2, 1, 2, 1, 1, 0], "wind": [{"speed": 25, "dir": "W"}, {"speed": 25, "dir": "W"}, {"speed": 10, "dir": "SW"}, {"speed": 15, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 30, "dir": "SSE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SE"}, {"speed": 20, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 20, "dir": "SE"}], "windState": ["cross-on", "cross-on", "on", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross", "cross-on", "cross", "cross", "cross", "cross-off", "cross-off", "cross-off", "cross"]}, "policebay": {"name": "Police Bay", "shortName": "Police Bay", "coast": "south", "url": "https://www.surf-forecast.com/breaks/Police-Bay/forecasts/latest/six_day", "rating": [2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wind": [{"speed": 25, "dir": "W"}, {"speed": 20, "dir": "W"}, {"speed": 10, "dir": "S"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 25, "dir": "SSE"}, {"speed": 20, "dir": "SE"}, {"speed": 20, "dir": "SSE"}, {"speed": 25, "dir": "SSE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "SE"}, {"speed": 20, "dir": "SE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "ESE"}, {"speed": 25, "dir": "SE"}], "windState": ["cross-off", "cross-off", "cross-on", "on", "on", "on", "on", "on", "on", "on", "on", "on", "cross-on", "on", "on", "on", "on", "on", "on", "on"]}}, "thresholds": {"waveM": 0.7, "periodS": 7, "windKt": 18}}
+</script>
+<script>
+const SURF = JSON.parse(document.getElementById("surf-data").textContent);
+const T = SURF.thresholds;
+const YEAR = 2026, MONTH = 4;
+
+function fmtDay(d) { return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }); }
+function kmhToKt(kmh) { return kmh / 1.852; }
+function parseDayLabel(s) {
+  if (!s) return null;
+  const parts = s.split(/\s+/);
+  return { weekday: parts[0], dom: parseInt(parts[1], 10) };
+}
+
+const todayDate = new Date(YEAR, MONTH, parseInt(SURF.todayIso.slice(8,10),10));
+function colDate(i) {
+  if (SURF.dayLabels[i] == null) return { iso: SURF.todayIso, date: new Date(todayDate) };
+  const d = parseDayLabel(SURF.dayLabels[i]);
+  const month = d.dom < todayDate.getDate() ? MONTH + 1 : MONTH;
+  const dateObj = new Date(YEAR, month, d.dom);
+  return { iso: dateObj.toISOString().slice(0,10), date: dateObj };
+}
+
+// Group columns by day, only AM/PM (skip Night for surf rating)
+const dayColMap = {};
+const dayOrder = [];
+for (let i = 0; i < SURF.times.length; i++) {
+  const { iso, date } = colDate(i);
+  if (!dayColMap[iso]) { dayColMap[iso] = { date, cols: [] }; dayOrder.push(iso); }
+  dayColMap[iso].cols.push(i);
+}
+
+// Wind-state quality: off=4, cross-off=3, cross=2, cross-on=1, on=0 (higher = better)
+function windStateScore(s) {
+  if (s === "off") return 4;
+  if (s === "cross-off") return 3;
+  if (s === "cross") return 2;
+  if (s === "cross-on") return 1;
+  if (s === "on") return 0;
+  return 0;
+}
+function windStateLabel(s) {
+  return { "off":"Offshore","cross-off":"Cross-off","cross":"Cross-shore","cross-on":"Cross-on","on":"Onshore" }[s] || s;
+}
+function windStateColor(s) {
+  return { "off":"#1abc9c","cross-off":"#2ecc71","cross":"#f1c40f","cross-on":"#e67e22","on":"#e74c3c" }[s] || "#999";
+}
+
+function spotSurfScore(spot, dayCols) {
+  // Score a spot for a day: max(waveH * period * windQuality / max(8, windKt))
+  // Higher = better.
+  const periods = dayCols.filter(i => SURF.times[i] === "AM" || SURF.times[i] === "PM");
+  if (periods.length === 0) return { score: -1, surfable: false, windyButGoodSwell: false, best: null };
+  let best = null, surfable = false, windyButGoodSwell = false;
+  for (const i of periods) {
+    const sw = SURF.swell[i];
+    const w = spot.wind[i];
+    const wKt = kmhToKt(w.speed);
+    const ws = spot.windState[i];
+    const wsScore = windStateScore(ws);
+    const meets = sw.h >= T.waveM && sw.period >= T.periodS;
+    const goodWind = wKt < T.windKt;
+    if (meets && goodWind) surfable = true;
+    if (meets && !goodWind) windyButGoodSwell = true;
+    // Score: penalise onshore, reward good wind
+    const score = sw.h * sw.period * (wsScore + 1) / Math.max(8, wKt);
+    if (!best || score > best.score) best = { i, score, period: SURF.times[i], waveH: sw.h, periodS: sw.period, waveDir: sw.dir, windKt: wKt, windDir: w.dir, windState: ws };
+  }
+  return { score: best.score, surfable, windyButGoodSwell, best };
+}
+
+const cards = [];
+for (const iso of dayOrder) {
+  const dd = dayColMap[iso];
+  // Wave/period range for the day (from shared swell rows, AM/PM only)
+  const amPmCols = dd.cols.filter(i => SURF.times[i] === "AM" || SURF.times[i] === "PM");
+  if (amPmCols.length === 0) continue;
+  const waveHs = amPmCols.map(i => SURF.swell[i].h);
+  const periods = amPmCols.map(i => SURF.swell[i].period);
+  const minWave = Math.min(...waveHs), maxWave = Math.max(...waveHs);
+  const minPeriod = Math.min(...periods), maxPeriod = Math.max(...periods);
+
+  // Aggregate tides across the full day
+  const dayHigh = [].concat(...dd.cols.map(i => SURF.tideHigh[i] || []));
+  const dayLow  = [].concat(...dd.cols.map(i => SURF.tideLow[i] || []));
+  const fmtTides = (arr) => arr.length ? arr.map(t => `${t.time} (${t.height.toFixed(2)}m)`).join(", ") : "—";
+  const tempHigh = Math.max(...dd.cols.map(i => SURF.tempMax[i]));
+
+  // Score each spot, pick best
+  const spotResults = Object.entries(SURF.spots).map(([key, sp]) => {
+    const r = spotSurfScore(sp, dd.cols);
+    return { key, spot: sp, ...r };
+  });
+  spotResults.sort((a,b) => b.score - a.score);
+  const winner = spotResults[0];
+
+  // Day classification: GO if any spot is surfable, MAYBE if any windy-good, NO if all small
+  const anySurfable = spotResults.some(s => s.surfable);
+  const anyWindy = spotResults.some(s => s.windyButGoodSwell);
+  let dayClass = "no", dayBadge = "NO";
+  if (anySurfable) { dayClass = "go"; dayBadge = "SURF"; }
+  else if (anyWindy) { dayClass = "maybe"; dayBadge = "WINDY"; }
+
+  // Spot tiles
+  const tilesHtml = spotResults.map((r, idx) => {
+    const cls = r.surfable ? "go" : (r.windyButGoodSwell ? "maybe" : "no");
+    const star = idx === 0 && (r.surfable || r.windyButGoodSwell) ? '<span class="winner">★ pick</span>' : '';
+    const ratingArr = r.spot.rating;
+    const dayRating = Math.max(...dd.cols.map(i => ratingArr[i]));
+    const stars = Math.round(dayRating / 2);
+    const starStr = "★".repeat(stars) + "☆".repeat(5 - stars);
+    const b = r.best;
+    const wsColor = windStateColor(b.windState);
+    return `<div class="spot-tile ${cls}">
+      <div class="spot-name">${r.spot.shortName} <span class="coast">${r.spot.coast}</span> ${star}</div>
+      <div class="rating-line"><span class="stars">${starStr}</span> <span class="rating-num">${dayRating}/10</span></div>
+      <div class="spot-row"><span class="k">Best</span><span class="v">${b.period} · ${b.waveH.toFixed(1)}m @ ${b.periodS}s</span></div>
+      <div class="spot-row"><span class="k">Wind</span><span class="v">${b.windKt.toFixed(0)}kt ${b.windDir}</span></div>
+      <div class="spot-row"><span class="k">State</span><span class="v" style="color:${wsColor};font-weight:600">${windStateLabel(b.windState)}</span></div>
+    </div>`;
+  }).join("");
+
+  cards.push(`<div class="day-card ${dayClass}">
+    <div class="day-header">
+      <div class="day-title">${fmtDay(dd.date)} <span class="badge ${dayClass}">${dayBadge}</span></div>
+      <div class="day-summary">${minWave.toFixed(1)}–${maxWave.toFixed(1)}m · ${minPeriod}–${maxPeriod}s · ${tempHigh}°C</div>
+    </div>
+    <div class="tides-line">
+      <span class="tide-hi">▲ ${fmtTides(dayHigh)}</span>
+      <span class="tide-lo">▼ ${fmtTides(dayLow)}</span>
+    </div>
+    <div class="spots-row">${tilesHtml}</div>
+  </div>`);
+}
+
+document.getElementById("grid").innerHTML = cards.join("");
+
+// Alerts summary
+const goDays = [], maybeDays = [];
+for (const iso of dayOrder) {
+  const dd = dayColMap[iso];
+  let go = false, maybe = false;
+  for (const [, sp] of Object.entries(SURF.spots)) {
+    const r = spotSurfScore(sp, dd.cols);
+    if (r.surfable) { go = true; break; }
+    if (r.windyButGoodSwell) maybe = true;
+  }
+  if (go) goDays.push(dd.date);
+  else if (maybe) maybeDays.push(dd.date);
+}
+const alertsEl = document.getElementById("alerts");
+if (goDays.length) {
+  alertsEl.className = "alerts go";
+  alertsEl.innerHTML = `<strong>🏄 Surfable days (any spot):</strong> ${goDays.map(fmtDay).join(", ")}`;
+} else if (maybeDays.length) {
+  alertsEl.className = "alerts maybe";
+  alertsEl.innerHTML = `<strong>🌬️ Good swell but windy:</strong> ${maybeDays.map(fmtDay).join(", ")}`;
+} else {
+  alertsEl.className = "alerts";
+  alertsEl.innerHTML = "No surfable days in the next 6 — small swell or short period throughout.";
+}
+
+document.getElementById("updated").textContent = `Forecast scraped ${new Date(SURF.fetchedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} Mahé time. Sources: surf-forecast.com (3 spots).`;
+</script>
+</body>
+</html>
