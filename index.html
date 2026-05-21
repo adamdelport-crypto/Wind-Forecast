@@ -170,6 +170,43 @@ function buildDate(dom, hour) {
 }
 function fmtDay(d) { return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }); }
 
+function fmtTideTime(hour) {
+  // hour is fractional (e.g. 4.38 → "04:23")
+  let h = Math.floor(hour), m = Math.round((hour - h) * 60);
+  if (m === 60) { m = 0; h += 1; }
+  if (h >= 24) h -= 24;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function findTideExtrema(date) {
+  // Find high and low tide times within the calendar day of `date`,
+  // using hourly TIDE_DATA values and quadratic refinement for sub-hour precision.
+  const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
+  const start = new Date(TIDE_DATA.startISO).getTime();
+  const dayOffsetH = (dayStart.getTime() - start) / 3600000;
+  const highs = [], lows = [];
+  for (let h = 0; h < 24; h++) {
+    const idx = Math.round(dayOffsetH + h);
+    if (idx <= 0 || idx >= TIDE_DATA.hourly.length - 1) continue;
+    const prev = TIDE_DATA.hourly[idx - 1];
+    const curr = TIDE_DATA.hourly[idx];
+    const next = TIDE_DATA.hourly[idx + 1];
+    if (prev == null || curr == null || next == null) continue;
+    const isHigh = curr > prev && curr > next;
+    const isLow  = curr < prev && curr < next;
+    if (!isHigh && !isLow) continue;
+    // Parabolic refinement: fit y = a*x² + b*x + c through (-1,prev),(0,curr),(1,next)
+    const a = (prev + next - 2 * curr) / 2;
+    const b = (next - prev) / 2;
+    const offset = a !== 0 ? -b / (2 * a) : 0;          // hours from `curr`
+    const refinedValue = curr - (b * b) / (4 * a);
+    const refinedHour = h + offset;
+    if (refinedHour < 0 || refinedHour >= 24) continue;
+    (isHigh ? highs : lows).push({ hour: refinedHour, value: refinedValue });
+  }
+  return { highs, lows };
+}
+
 function render() {
   const grid = document.getElementById("grid");
   const alertsEl = document.getElementById("alerts");
@@ -306,9 +343,14 @@ function render() {
     const prefDir = isPreferred(meanDir);
     const window = bestWindow(dd.points);
 
-    // Tide range during the day (08:00-18:00 daytime points)
-    const tides = dd.points.map(p => p.tide).filter(v => v != null);
-    const tideRange = tides.length ? `${Math.min(...tides).toFixed(2)} to ${Math.max(...tides).toFixed(2)} m` : "—";
+    // High and low tide times across the full calendar day
+    const tideEx = findTideExtrema(dd.date);
+    const highStr = tideEx.highs.length
+      ? tideEx.highs.map(t => `${fmtTideTime(t.hour)} (${t.value.toFixed(2)}m)`).join(", ")
+      : "—";
+    const lowStr = tideEx.lows.length
+      ? tideEx.lows.map(t => `${fmtTideTime(t.hour)} (${t.value.toFixed(2)}m)`).join(", ")
+      : "—";
 
     let cls = "no", badge = "NO", label = "Too light";
     if (peakWs >= WINDSURF_KT && prefDir) { cls = "go"; badge = "WINDSURF"; label = "Windsurf"; goDays.push(dd.date); }
@@ -326,7 +368,8 @@ function render() {
       <div class="row"><span class="k">Wind avg / peak</span><span class="v">${avg.toFixed(1)} / ${peakWs} kt</span></div>
       <div class="row"><span class="k">Gust peak</span><span class="v">${peak} kt</span></div>
       <div class="row"><span class="k">Direction</span><span class="v">${compass} (${Math.round(meanDir)}°)</span></div>
-      <div class="row"><span class="k">Tide (daytime)</span><span class="v">${tideRange}</span></div>
+      <div class="row"><span class="k">High tide</span><span class="v">${highStr}</span></div>
+      <div class="row"><span class="k">Low tide</span><span class="v">${lowStr}</span></div>
     </div>`);
   }
 
